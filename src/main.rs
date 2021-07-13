@@ -1,5 +1,3 @@
-extern crate getopts;
-
 use std::env;
 use std::io::{stderr, stdout, Write};
 use std::process::exit;
