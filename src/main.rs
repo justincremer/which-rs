@@ -33,7 +33,6 @@ fn main() {
                     let _ = stderr.write(format!("{}\n", e).as_bytes());
                     exit(1);
                 };
-                let _ = writeln!(stdout, "{}\n", MAN_PAGE);
                 exit(0);
             }
             _ => {
