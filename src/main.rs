@@ -2,7 +2,8 @@ use std::env;
 use std::io::{stderr, stdout, Write};
 use std::process::exit;
 
-const MAN_PAGE: &'static str = r#"
+const MAN_PAGE: &'static str = /* @MANSTART{time} */
+    r#"
 NAME
     which - locate a command
 SYNOPSIS
