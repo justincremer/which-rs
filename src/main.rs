@@ -24,16 +24,16 @@ fn main() {
     let mut args: Vec<String> = env::args().collect();
     match args.len() {
         0 | 1 => {
-            let _ = stderr.write(b"Please provide an argument");
+            let _ = stderr.write(b"Please provide an argument\n");
             exit(1);
         }
         _ => match args[1].as_str() {
             "-h" | "--help" => {
                 if let Err(e) = stdout.write(MAN_PAGE.as_bytes()) {
-                    let _ = stderr.write(format!("{}", e).as_bytes());
+                    let _ = stderr.write(format!("{}\n", e).as_bytes());
                     exit(1);
                 };
-                let _ = writeln!(stdout, "{}", MAN_PAGE);
+                let _ = writeln!(stdout, "{}\n", MAN_PAGE);
                 exit(0);
             }
             _ => {
@@ -51,12 +51,13 @@ fn main() {
 
                     match exec_path {
                         Some(path) => {
-                            if let Err(e) = stdout.write(format!("{}", path.display()).as_bytes()) {
-                                let _ = stderr.write(format!("{}", e).as_bytes());
+                            if let Err(e) = stdout.write(format!("{}\n", path.display()).as_bytes())
+                            {
+                                let _ = stderr.write(format!("{}\n", e).as_bytes());
                             }
                         }
                         None => {
-                            let _ = stderr.write(format!("{} not found", program).as_bytes());
+                            let _ = stderr.write(format!("{} not found\n", program).as_bytes());
                         }
                     };
                 });
