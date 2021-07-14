@@ -1,7 +1,7 @@
 extern crate getopts;
 
 use std::env;
-use std::io::{stderr, stdout, Write};
+use std::io::{stderr, stdout};
 use std::process::exit;
 
 const MAN_PAGE: &'static str = r#"
