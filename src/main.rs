@@ -1,66 +1,101 @@
-use std::env;
-use std::io::{stderr, stdout, Write};
-use std::process::exit;
+use std::{
+    env,
+    io::{self, Stderr, Stdout, Write},
+    process,
+};
 
-const MAN_PAGE: &'static str = /* @MANSTART{time} */
+const MAN_PAGE: &str = /* @MANSTART{time} */
     r#"
 NAME
     which - locate a command
 SYNOPSIS
-    which [ -h | --help ]
+    which [ -h | --help | help ]
 DESCRIPTION
     which prints the full path of shell commands
 OPTIONS
-    -h
-    --help
-        Print this manual page.
+    -h Print this manual page.
 "#; /* @MANEND */
 
-fn main() {
-    let stdout = stdout();
-    let mut stdout = stdout.lock();
-    let mut stderr = stderr();
+fn main() -> io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+    let stdout = io::stdout();
+    let stderr = io::stderr();
 
-    let mut args: Vec<String> = env::args().collect();
-    match args.len() {
-        0 | 1 => {
-            let _ = stderr.write(b"Please provide an argument\n");
-            exit(1);
-        }
-        _ => match args[1].as_str() {
-            "-h" | "--help" => {
-                if let Err(e) = stdout.write(MAN_PAGE.as_bytes()) {
-                    let _ = stderr.write(format!("{}\n", e).as_bytes());
-                    exit(1);
-                };
-                exit(0);
-            }
-            _ => {
-                let paths = env::var("PATH").unwrap();
-                args.remove(0);
-                args.iter().for_each(|program| {
-                    let mut exec_path = None;
-                    for mut path in env::split_paths(&paths) {
-                        path.push(program);
-                        if path.exists() {
-                            exec_path = Some(path);
-                            break;
-                        }
-                    }
-
-                    match exec_path {
-                        Some(path) => {
-                            if let Err(e) = stdout.write(format!("{}\n", path.display()).as_bytes())
-                            {
-                                let _ = stderr.write(format!("{}\n", e).as_bytes());
-                            }
-                        }
-                        None => {
-                            let _ = stderr.write(format!("{} not found\n", program).as_bytes());
-                        }
-                    };
-                });
-            }
-        },
+    if args.len() < 2 {
+        stderr.lock().write_all(b"Please provide an argument\n")?;
+        process::exit(1);
     }
+
+    let mut command = Command::new(args, Some(stdout), Some(stderr));
+    command.execute()
+}
+
+struct Command {
+    args: Vec<String>,
+    stdout: Stdout,
+    stderr: Stderr,
+}
+
+impl Command {
+    pub fn new(args: Vec<String>, stdout: Option<Stdout>, stderr: Option<Stderr>) -> Self {
+        Self {
+            args,
+            stdout: stdout.unwrap_or_else(io::stdout),
+            stderr: stderr.unwrap_or_else(io::stderr),
+        }
+    }
+
+    pub fn execute(&mut self) -> io::Result<()> {
+        match self.args[1].as_str() {
+            "-h" | "--help" | "help" => self.help(),
+            _ => self.run(),
+        }
+    }
+
+    fn help(&mut self) -> io::Result<()> {
+        map_io_result!(self.write_out(MAN_PAGE))
+    }
+
+    fn run(&mut self) -> io::Result<()> {
+        let paths = env::var("PATH").unwrap();
+        self.args.remove(0);
+        self.args
+            .to_owned()
+            .iter()
+            .try_for_each(|program| -> io::Result<()> {
+                let mut exec_path = None;
+                for mut path in env::split_paths(&paths) {
+                    path.push(program);
+                    if path.exists() {
+                        exec_path = Some(path);
+                        break;
+                    }
+                }
+
+                match exec_path {
+                    Some(path) => self.write_out(format!("{}\n", path.display()).as_str()),
+                    None => self.write_err(format!("{} not found\n", program).as_str()),
+                }
+            })?;
+
+        Ok(())
+    }
+
+    fn write_out(&mut self, message: &str) -> io::Result<()> {
+        map_io_result!(self.stdout.lock().write(message.as_bytes()))
+    }
+
+    fn write_err(&mut self, message: &str) -> io::Result<()> {
+        map_io_result!(self.stderr.lock().write(message.as_bytes()))
+    }
+}
+
+#[macro_export]
+macro_rules! map_io_result {
+    ($result:expr) => {
+        match $result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
+    };
 }
