@@ -4,4 +4,11 @@ version = "0.1.0"
 authors = ["jacremer <jacremer@live.com>"]
 edition = "2018"
 
-[dependencies]
+[[bin]]
+name = "which"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "s"
+strip = "debuginfo"
+lto = "thin"

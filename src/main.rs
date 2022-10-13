@@ -11,7 +11,7 @@ NAME
 SYNOPSIS
     which [ -h | --help | help ]
 DESCRIPTION
-    which prints the full path of shell commands
+    prints the full path of commands
 OPTIONS
     -h Print this manual page.
 "#; /* @MANEND */
@@ -22,7 +22,7 @@ fn main() -> io::Result<()> {
     let stderr = io::stderr();
 
     if args.len() < 2 {
-        stderr.lock().write_all(b"Please provide an argument\n")?;
+        stderr.lock().write_all(b"Please provide a name\n")?;
         process::exit(1);
     }
 
